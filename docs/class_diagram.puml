@@ -1,0 +1,101 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Segoe UI
+skinparam roundcorner 5
+
+package "App\\Controller" {
+    class StatusController {
+        + api(Request $request): JsonResponse
+        + ping(): JsonResponse
+    }
+
+    class CountryController {
+        - CountryScenarios $countries
+        + __construct(CountryScenarios $countries)
+        + getAll(Request $request): JsonResponse
+        + get(string $code): JsonResponse
+        + add(Request $request, Country $country): JsonResponse
+        + edit(Request $request, string $code, Country $country): JsonResponse
+        + remove(string $code): JsonResponse
+        - buildErrorResponse(Exception $ex): JsonResponse
+    }
+}
+
+package "App\\Model" {
+    class Country {
+        + string $shortName
+        + string $fullName
+        + string $isoAlpha2
+        + string $isoAlpha3
+        + string $isoNumeric
+        + int $population
+        + float $square
+        + __construct(...)
+    }
+
+    interface CountryRepository {
+        + SelectAll(): array
+        + selectByCode(string $code): ?Country
+        + selectByName(string $name): ?Country
+        + store(Country $country): void
+        + delete(string $code): void
+        + update(string $code, Country $country): void
+    }
+
+    class CountryScenarios {
+        - CountryRepository $storage
+        + __construct(CountryRepository $storage)
+        + getAll(): array
+        + get(string $code): Country
+        + store(Country $country): void
+        + edit(string $code, Country $country): void
+        + delete(string $code): void
+    }
+}
+
+package "App\\Rdb" {
+    class SqlHelper {
+        + __construct()
+        - pingDb(): void
+        + openDbConnection(): mysqli
+    }
+
+    class CountryStorage implements CountryRepository {
+        - SqlHelper $SqlHelper
+        + __construct(SqlHelper $SqlHelper)
+        + SelectAll(): array
+        + SelectByCode(string $code): ?Country
+        + SelectByName(string $name): ?Country
+        + store(Country $country): void
+        + delete(string $code): void
+        + update(string $code, Country $country): void
+    }
+}
+
+package "App\\Model\\Exceptions" {
+    class ErrorCodes {
+        + const INVALID_CODE_ERROR = 1
+        + const NOT_FOUND_ERROR = 2
+        + const DUPLICATED_CODE_ERROR = 3
+        + const DUPLICATED_NAME_ERROR = 4
+        + const VALIDATION_ERROR = 5
+    }
+    class CountryNotFoundException extends \Exception
+    class InvalidCodeException extends \Exception
+    class DuplicatedCodeException extends \Exception
+    class DuplicatedNameException extends \Exception
+    class ValidationException extends \Exception
+}
+
+CountryController --> CountryScenarios : uses
+CountryScenarios --> CountryRepository : uses
+CountryStorage ..|> CountryRepository : implements
+CountryStorage --> SqlHelper : uses
+
+CountryController ..> Country : uses
+CountryScenarios ..> Country : uses
+CountryStorage ..> Country : uses
+@enduml
+

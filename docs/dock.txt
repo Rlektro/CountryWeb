@@ -1,0 +1,4 @@
+docker compose exec app composer require symfony/serializer-pack
+
+docker compose exec app composer require symfony/maker-bundle --dev
+
